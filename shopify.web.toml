@@ -1,0 +1,9 @@
+# Tells `shopify app dev` how to run the web process (rendered from the
+# template's shopify.web.toml.liquid for pnpm).
+name = "React Router"
+roles = ["frontend", "backend"]
+webhooks_path = "/webhooks/app/uninstalled"
+
+[commands]
+predev = "pnpm exec prisma generate"
+dev = "pnpm exec prisma migrate deploy && pnpm exec react-router dev"

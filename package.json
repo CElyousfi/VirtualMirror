@@ -20,7 +20,7 @@
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint app packages",
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "demo:frame": "tsx packages/engine-geometry/scripts/write-demo-frame.ts",
-    "proof:storage": "tsx scripts/proofs/storage-lifecycle.ts",
+    "smoke:widget": "pnpm build:widget && node scripts/smoke/run.cjs",
     "config:link": "shopify app config link",
     "config:use": "shopify app config use",
     "deploy": "pnpm build:widget && shopify app deploy",
