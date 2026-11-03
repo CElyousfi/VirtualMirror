@@ -34,3 +34,4 @@ yarn.lock
 
 # Local benchmark imagery stays out of git (see docs/QUALITY_BENCHMARKS.md)
 /bench/images/
+/app/types/

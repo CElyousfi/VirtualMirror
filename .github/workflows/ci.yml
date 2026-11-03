@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma client
+        run: pnpm prisma generate
+
+      - name: Migrations apply cleanly and enforce tenant isolation (SQLite)
+        run: node scripts/verify-migrations.mjs
+
+      - name: Migrations match schema.prisma (no drift)
+        run: >
+          pnpm prisma migrate diff
+          --from-migrations ./prisma/migrations
+          --to-schema-datamodel ./prisma/schema.prisma
+          --shadow-database-url "file:./shadow.sqlite"
+          --exit-code
+
+      - name: Validate GraphQL operations against the Admin API schema
+        run: pnpm graphql-codegen
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build widget and app
+        run: pnpm build
+
+      - name: Widget bundle size
+        run: |
+          ls -l extensions/virtual-mirror/assets/
+          gzip -c extensions/virtual-mirror/assets/virtual-mirror.js | wc -c | awk '{printf "virtual-mirror.js gzipped: %.1f KB\n", $1/1024}'

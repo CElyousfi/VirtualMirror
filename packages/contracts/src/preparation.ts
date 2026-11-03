@@ -17,6 +17,8 @@ export type PreparationMethodId =
   | "silhouette-2.5d"
   | "manual-dimensions"
   | "demo-template"
+  // Allows future method ids while keeping autocomplete for the known ones.
+  // eslint-disable-next-line @typescript-eslint/ban-types
   | (string & {});
 
 export interface ProductImageInput {
