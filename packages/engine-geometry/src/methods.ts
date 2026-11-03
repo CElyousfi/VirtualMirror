@@ -70,7 +70,7 @@ export const existingGlbMethod: PreparationMethod = {
       checks.push({ id: "units", passed: true, severity: "blocker", message: "Model is in metres." });
     }
 
-    const widthMm = mToMm(info.size[0]);
+    const widthMm = mToMm(info.frontWidth);
     checks.push({
       id: "orientation",
       passed: info.size[0] >= info.size[1],
@@ -126,7 +126,7 @@ export const existingGlbMethod: PreparationMethod = {
       glb,
       anchors: { bridge },
       spec,
-      frameWidthM: info.size[0],
+      frameWidthM: info.frontWidth,
       triangleCount: info.triangleCount,
       // A measured, plausibly sized model is its own scale source.
       readiness: buildReport(checks, info.unit !== "unknown"),

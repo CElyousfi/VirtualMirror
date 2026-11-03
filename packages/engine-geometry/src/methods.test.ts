@@ -46,7 +46,8 @@ describe("buildDemoFrameGlb", () => {
     const info = inspectDocument(await readGlb(res.glb), res.glb.byteLength);
     // 2 x 52 lens + 18 bridge + 2 x 4 rim + 2 x end piece = 138 mm with template defaults.
     expect(res.frameWidthM).toBeCloseTo(0.138, 3);
-    expect(info.size[0]).toBeCloseTo(res.frameWidthM, 4);
+    expect(info.frontWidth).toBeCloseTo(res.frameWidthM, 4);
+    expect(info.size[0]).toBeGreaterThan(res.frameWidthM); // splayed temples
     expect(info.unit).toBe("metres");
     expect(info.bridgeNode).toEqual([0, 0, 0]);
     expect(info.triangleCount).toBe(res.triangleCount);
@@ -134,5 +135,18 @@ describe("demoTemplateMethod", () => {
     const out = await demoTemplateMethod.prepare(input());
     expect(out.readiness.hasScaleSource).toBe(false);
     expect(out.spec.totalWidth?.source).toBe("template");
+  });
+});
+
+describe("demo frame temples clear the canonical head", () => {
+  it("puts the temples outside the canonical face width at ear depth", async () => {
+    const { CANONICAL_LANDMARKS_CM, DEFAULT_BRIDGE_ANCHOR_CM } = await import("@vm/contracts");
+    const res = await buildDemoFrameGlb();
+    const info = inspectDocument(await readGlb(res.glb), res.glb.byteLength);
+    // Ear landmark depth expressed in asset space (metres, relative to the bridge anchor).
+    const earZ = (CANONICAL_LANDMARKS_CM.leftFaceEdge[2] - DEFAULT_BRIDGE_ANCHOR_CM[2]) / 100;
+    expect(info.bounds.min[2]).toBeLessThan(earZ);
+    const tipX = res.anchors.leftTempleTip[0];
+    expect(tipX).toBeGreaterThan(CANONICAL_LANDMARKS_CM.leftFaceEdge[0] / 100);
   });
 });

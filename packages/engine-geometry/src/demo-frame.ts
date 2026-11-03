@@ -26,6 +26,9 @@ export const TEMPLATE_DEFAULTS_MM = {
   templeHeight: 5,
 } as const;
 
+/** Outward angle of each temple from straight back, in degrees. */
+export const TEMPLE_SPLAY_DEG = 8;
+
 export interface DemoFrameOptions {
   spec?: Partial<FrameSpec>;
   frameColor?: [number, number, number];
@@ -98,14 +101,18 @@ export function buildDemoFrameMeshes(opts: DemoFrameOptions = {}) {
     const outerX = side * (halfFront + endW);
     const innerX = side * (halfFront - rim);
     frame.addBox([Math.min(innerX, outerX), templeY - th / 2, 0], [Math.max(innerX, outerX), templeY + th / 2, depth]);
-    const tx0 = side > 0 ? halfFront + endW - tw : -halfFront - endW;
-    const tx1 = tx0 + tw;
-    // Straight run backwards (-Z).
-    frame.addBox([tx0, templeY - th / 2, -straight], [tx1, templeY + th / 2, 0]);
-    // Ear bend: a drop behind the ear.
+    // Temples splay outward so they clear the head: the canonical face is
+    // ~153 mm wide at the ears, wider than most frame fronts.
+    const hingeX = side * (halfFront + endW - tw / 2);
+    const splay = Math.tan((TEMPLE_SPLAY_DEG * Math.PI) / 180);
+    const p0: [number, number, number] = [hingeX, templeY, 0];
+    const p1: [number, number, number] = [hingeX + side * straight * splay, templeY, -straight];
+    frame.addBeam(p0, p1, tw, th);
+    // Ear bend: angled down and back behind the ear.
     const bendLen = templeLen - straight;
-    frame.addBox([tx0, templeY - th / 2 - bendDrop, -straight - bendLen * 0.6], [tx1, templeY + th / 2, -straight]);
-    tips.push([(tx0 + tx1) / 2, templeY - bendDrop, -straight - bendLen * 0.6]);
+    const p2: [number, number, number] = [p1[0] + side * bendLen * 0.3 * splay, templeY - bendDrop, -straight - bendLen * 0.8];
+    frame.addBeam(p1, p2, tw, th);
+    tips.push(p2);
   }
 
   return {

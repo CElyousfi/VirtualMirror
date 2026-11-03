@@ -27,11 +27,12 @@ export const mToMm = (m: number): number => m * MM_PER_M;
 export const mmToCm = (mm: number): number => mm / MM_PER_CM;
 
 /**
- * Plausible physical range for the total front width of adult eyewear.
+ * Plausible physical range for the overall width of adult eyewear (front,
+ * or splayed temples, whichever is wider).
  * Used to detect GLBs authored in the wrong unit (a 140 mm frame exported as
  * "140" units is a 140 m object in glTF terms).
  */
-export const PLAUSIBLE_FRAME_WIDTH_M = { min: 0.1, max: 0.18 } as const;
+export const PLAUSIBLE_FRAME_WIDTH_M = { min: 0.1, max: 0.2 } as const;
 
 export type UnitGuess = "metres" | "centimetres" | "millimetres" | "unknown";
 

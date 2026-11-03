@@ -1,4 +1,4 @@
-import { WebIO, type Document, type Node } from "@gltf-transform/core";
+import { WebIO, type Document, type Node, type Scene } from "@gltf-transform/core";
 import { getBounds } from "@gltf-transform/functions";
 import { guessUnitFromFrameWidth, type UnitGuess } from "@vm/contracts";
 
@@ -15,6 +15,12 @@ export interface GlbInspection {
   byteSize: number;
   triangleCount: number;
   meshCount: number;
+  /**
+   * Width of the frame FRONT (file units): x-extent of geometry within the
+   * front 12 mm of the model. Splayed temples are excluded, so this matches
+   * the published total frame width.
+   */
+  frontWidth: number;
   /** World-space bounds in the file's own units. */
   bounds: { min: [number, number, number]; max: [number, number, number] };
   size: [number, number, number];
@@ -54,6 +60,8 @@ export function inspectDocument(doc: Document, byteSize: number): GlbInspection 
   // Use the larger of width and height so a rotated model is reported as
   // rotated (orientation check) rather than as the wrong unit.
   const { unit, toMetres } = guessUnitFromFrameWidth(Math.max(size[0], size[1]));
+  const slab = FRONT_SLAB_M / (unit === "unknown" ? 1 : toMetres);
+  const frontWidth = frontSlabWidth(scene, max[2] - slab);
   const bridge = findNode(doc, "VM_Bridge");
 
   return {
@@ -62,6 +70,7 @@ export function inspectDocument(doc: Document, byteSize: number): GlbInspection 
     meshCount,
     bounds: { min: [...min] as [number, number, number], max: [...max] as [number, number, number] },
     size,
+    frontWidth,
     unit,
     toMetres,
     bridgeNode: bridge ? ([...bridge.getWorldTranslation()] as [number, number, number]) : null,
@@ -70,6 +79,34 @@ export function inspectDocument(doc: Document, byteSize: number): GlbInspection 
       .listMaterials()
       .some((m) => m.getAlphaMode() === "BLEND" || m.getBaseColorFactor()[3]! < 1),
   };
+}
+
+const FRONT_SLAB_M = 0.012;
+
+/** X-extent of all vertices (world space) whose z is at least `minZ`. */
+function frontSlabWidth(scene: Scene, minZ: number): number {
+  let lo = Infinity;
+  let hi = -Infinity;
+  scene.traverse((node) => {
+    const mesh = node.getMesh();
+    if (!mesh) return;
+    const m = node.getWorldMatrix();
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute("POSITION");
+      if (!pos) continue;
+      const v = [0, 0, 0];
+      for (let i = 0; i < pos.getCount(); i++) {
+        pos.getElement(i, v);
+        const x = m[0] * v[0]! + m[4] * v[1]! + m[8] * v[2]! + m[12];
+        const z = m[2] * v[0]! + m[6] * v[1]! + m[10] * v[2]! + m[14];
+        if (z >= minZ) {
+          if (x < lo) lo = x;
+          if (x > hi) hi = x;
+        }
+      }
+    }
+  });
+  return hi > lo ? hi - lo : 0;
 }
 
 /**

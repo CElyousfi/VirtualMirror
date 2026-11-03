@@ -76,3 +76,23 @@ describe("addBox and addFilledLoop winding", () => {
     expect(triangleNormals(mb.build()).every((t) => t.n[2] > 0.99)).toBe(true);
   });
 });
+
+describe("addBeam", () => {
+  it("builds an outward-facing box along an arbitrary direction", async () => {
+    const { MeshBuilder: MB } = await import("./mesh");
+    const mb = new MB();
+    mb.addBeam([0.07, 0.01, 0], [0.085, 0.01, -0.1], 0.003, 0.005);
+    const m = mb.build();
+    const c = [0.0775, 0.01, -0.05];
+    let outward = 0;
+    for (let t = 0; t < m.indices.length; t += 3) {
+      const p = [0, 1, 2].map((k) => [0, 1, 2].map((j) => m.positions[m.indices[t + k]! * 3 + j]!));
+      const u = p[1]!.map((v, j) => v - p[0]![j]!);
+      const v = p[2]!.map((x, j) => x - p[0]![j]!);
+      const n = [u[1]! * v[2]! - u[2]! * v[1]!, u[2]! * v[0]! - u[0]! * v[2]!, u[0]! * v[1]! - u[1]! * v[0]!];
+      const centroid = [0, 1, 2].map((j) => (p[0]![j]! + p[1]![j]! + p[2]![j]!) / 3);
+      if (n[0]! * (centroid[0]! - c[0]!) + n[1]! * (centroid[1]! - c[1]!) + n[2]! * (centroid[2]! - c[2]!) > 0) outward++;
+    }
+    expect(outward).toBe(12);
+  });
+});

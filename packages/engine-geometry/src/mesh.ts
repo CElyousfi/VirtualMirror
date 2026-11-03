@@ -60,6 +60,36 @@ export class MeshBuilder {
     for (const f of faces) this.addSurface(f, [[0, 1, 2], [0, 2, 3]]);
   }
 
+  /**
+   * Box with arbitrary orientation. `axes` must be a right-handed orthonormal
+   * basis (x cross y = z) so face winding stays outward.
+   */
+  addOrientedBox(center: P3, axes: [P3, P3, P3], half: P3): void {
+    const at = (sx: number, sy: number, sz: number): P3 => [0, 1, 2].map(
+      (k) => center[k]! + sx * half[0] * axes[0][k]! + sy * half[1] * axes[1][k]! + sz * half[2] * axes[2][k]!,
+    ) as P3;
+    const faces: P3[][] = [
+      [at(1, -1, -1), at(1, 1, -1), at(1, 1, 1), at(1, -1, 1)],
+      [at(-1, -1, 1), at(-1, 1, 1), at(-1, 1, -1), at(-1, -1, -1)],
+      [at(-1, 1, -1), at(-1, 1, 1), at(1, 1, 1), at(1, 1, -1)],
+      [at(-1, -1, 1), at(-1, -1, -1), at(1, -1, -1), at(1, -1, 1)],
+      [at(-1, -1, 1), at(1, -1, 1), at(1, 1, 1), at(-1, 1, 1)],
+      [at(1, -1, -1), at(-1, -1, -1), at(-1, 1, -1), at(1, 1, -1)],
+    ];
+    for (const f of faces) this.addSurface(f, [[0, 1, 2], [0, 2, 3]]);
+  }
+
+  /** A beam of rectangular section from p0 to p1, keeping its height axis near world +Y. */
+  addBeam(p0: P3, p1: P3, width: number, height: number): void {
+    const d = normalize([p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]]);
+    const up0: P3 = Math.abs(d[1]) > 0.95 ? [0, 0, 1] : [0, 1, 0];
+    const x = normalize(cross(up0, d));
+    const y = cross(d, x);
+    const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]);
+    const c: P3 = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
+    this.addOrientedBox(c, [x, y, d], [width / 2, height / 2, len / 2]);
+  }
+
   build(): MeshData {
     return {
       positions: new Float32Array(this.pos),
@@ -137,4 +167,13 @@ export function addFilledLoop(mb: MeshBuilder, loop: [number, number][], z: numb
   const tris: [number, number, number][] = [];
   for (let i = 0; i < loop.length; i++) tris.push([0, 1 + i, 1 + ((i + 1) % loop.length)]);
   mb.addSurface(pts, tris);
+}
+
+export function cross(a: P3, b: P3): P3 {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+
+export function normalize(v: P3): P3 {
+  const n = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / n, v[1] / n, v[2] / n];
 }
