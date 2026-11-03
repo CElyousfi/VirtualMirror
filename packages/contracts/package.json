@@ -1,0 +1,16 @@
+{
+  "name": "@vm/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared schemas, units and coordinate-space contracts. No runtime dependencies on DOM, Shopify or React.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  }
+}

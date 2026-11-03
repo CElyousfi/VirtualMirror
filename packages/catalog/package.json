@@ -1,0 +1,10 @@
+{
+  "name": "@vm/catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure catalog logic: Shopify product mapping and eyewear detection.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit -p ." },
+  "dependencies": { "@vm/contracts": "workspace:*" }
+}

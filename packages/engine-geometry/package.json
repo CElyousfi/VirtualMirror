@@ -1,0 +1,15 @@
+{
+  "name": "@vm/engine-geometry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runtime-neutral geometry engine: parametric frames, GLB export and validation. No DOM, no Shopify.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit -p ." },
+  "dependencies": {
+    "@gltf-transform/core": "^4.2.0",
+    "@gltf-transform/functions": "^4.2.0",
+    "@vm/contracts": "workspace:*"
+  },
+  "devDependencies": { "@types/node": "^25.5.2" }
+}

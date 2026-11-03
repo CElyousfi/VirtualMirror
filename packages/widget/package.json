@@ -1,0 +1,22 @@
+{
+  "name": "@vm/widget",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shopper-side live try-on: camera, MediaPipe face tracking, Three.js rendering.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.2",
+    "@vm/contracts": "workspace:*",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "vite": "^7.3.1"
+  }
+}

@@ -1,0 +1,42 @@
+# Virtual Mirror — Shopify app configuration (development).
+# Run `pnpm config:link` once to link this file to your app in the Shopify Dev Dashboard;
+# the CLI fills in client_id and the URLs.
+client_id = ""
+name = "Virtual Mirror (dev)"
+embedded = true
+
+[access_scopes]
+# Every scope is justified in docs/SHOPIFY_INTEGRATION.md#scopes.
+# read_themes is deliberately absent: theme block activation is read with
+# App Bridge `shopify.app.extensions()`, which needs no scope.
+scopes = "read_products,write_products,write_files"
+
+[webhooks]
+api_version = "2026-10"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = ["app/uninstalled"]
+
+  [[webhooks.subscriptions]]
+  topics = ["app/scopes_update"]
+  uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = ["products/update", "products/delete"]
+  uri = "/webhooks/products"
+
+  # Mandatory compliance topics. Shopify accepts these for public apps; they are
+  # implemented in app/routes/webhooks.compliance.tsx and must be enabled before
+  # the public app is submitted (Milestone 6).
+  # [[webhooks.subscriptions]]
+  # uri = "/webhooks/compliance"
+  # compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+
+# App-owned product metafield holding the storefront try-on manifest.
+# Liquid reads it as product.metafields["$app"].vm_manifest inside our extension.
+[product.metafields.app.vm_manifest]
+name = "Virtual Mirror try-on manifest"
+description = "Written by Virtual Mirror. Describes the published 3D eyewear assets for this product."
+type = "json"
+access.admin = "merchant_read"
