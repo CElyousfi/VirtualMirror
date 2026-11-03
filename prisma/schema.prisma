@@ -1,34 +1,106 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Virtual Mirror data model.
+// Every row that belongs to a merchant carries `shop` (the myshopify domain).
+// All queries filter by it; see app/models/*.server.ts. SQLite in development,
+// PostgreSQL in production (same schema, change `provider`).
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "sqlite"
   url      = "file:dev.sqlite"
 }
 
+// Owned by @shopify/shopify-app-session-storage-prisma. Do not rename fields.
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+}
+
+// One row per installed store (tenant).
+model Shop {
+  shop          String    @id
+  installedAt   DateTime  @default(now())
+  lastSyncAt    DateTime?
+  lastSyncError String?
+  products      Product[]
+  assets        Asset[]
+}
+
+// Local mirror of a Shopify product, refreshed by sync and webhooks.
+model Product {
+  id               String   @id @default(cuid())
+  shop             String
+  shopifyGid       String
+  legacyId         String
+  title            String
+  handle           String
+  productType      String
+  vendor           String
+  status           String
+  category         String?
+  featuredImageUrl String?
+  imageCount       Int
+  variantCount     Int
+  // JSON-encoded ProductSnapshot (packages/catalog). SQLite has no JSON type.
+  snapshotJson     String
+  eyewearScore     Float
+  eyewearReasons   String // JSON string[]
+  // null = follow the classifier; "include" / "exclude" = merchant override.
+  merchantDecision String?
+  syncedAt         DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  shopRef Shop    @relation(fields: [shop], references: [shop], onDelete: Cascade)
+  assets  Asset[]
+
+  @@unique([shop, shopifyGid])
+  @@index([shop, eyewearScore])
+}
+
+// One prepared 3D asset per product variant group (colour/material/size).
+model Asset {
+  id                String    @id @default(cuid())
+  shop              String
+  productId         String
+  variantKey        String
+  variantLabel      String
+  variantIdsJson    String // JSON string[] of variant legacy IDs, or ["*"]
+  method            String // PreparationMethodId
+  state             String // AssetState
+  readinessJson     String // ReadinessReport
+  specJson          String // FrameSpec
+  anchorsJson       String // AssetAnchors
+  frameWidthM       Float
+  triangleCount     Int
+  byteSize          Int
+  fileGid           String?
+  fileUrl           String?
+  fileStatus        String?
+  merchantApprovedAt DateTime?
+  publishedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  shopRef Shop    @relation(fields: [shop], references: [shop], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, variantKey])
+  @@index([shop, state])
 }

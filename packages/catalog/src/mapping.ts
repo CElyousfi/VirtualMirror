@@ -23,7 +23,8 @@ export interface ProductNode {
       legacyResourceId: string | number;
       title: string;
       selectedOptions: { name: string; value: string }[];
-      media: { nodes: MediaNode[] };
+      /** Present on the detail query only. */
+      media?: { nodes: MediaNode[] };
     }[];
   };
 }
@@ -68,7 +69,7 @@ export function mapProductNode(node: ProductNode): ProductSnapshot {
     images,
     existingModels,
     variants: node.variants.nodes.map((v) => {
-      const img = v.media.nodes.find(isImage);
+      const img = v.media?.nodes.find(isImage);
       return {
         gid: v.id,
         legacyId: String(v.legacyResourceId),
