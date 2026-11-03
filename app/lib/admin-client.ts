@@ -31,9 +31,14 @@ export class UserErrors extends Error {
   }
 }
 
+interface GraphqlError {
+  message: string;
+  extensions?: { code?: string };
+}
+
 interface GraphqlEnvelope<T> {
   data?: T;
-  errors?: { message: string; extensions?: { code?: string } }[] | { message: string };
+  errors?: GraphqlError[] | GraphqlError;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -59,8 +64,8 @@ export async function gql<T>(
       if (e.body) body = e.body;
       else throw err;
     }
-    const errors = Array.isArray(body.errors) ? body.errors : body.errors ? [body.errors] : [];
-    const throttled = errors.some((e) => "extensions" in e && e.extensions?.code === "THROTTLED");
+    const errors: GraphqlError[] = Array.isArray(body.errors) ? body.errors : body.errors ? [body.errors] : [];
+    const throttled = errors.some((e) => e.extensions?.code === "THROTTLED");
     if (throttled && attempt < retries) {
       await sleep(backoffMs * 2 ** attempt);
       continue;

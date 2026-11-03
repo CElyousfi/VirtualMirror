@@ -21,9 +21,9 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>A short heading about [your app]</h1>
+        <h1 className={styles.heading}>Virtual Mirror</h1>
         <p className={styles.text}>
-          A tagline about [your app] that describes your value proposition.
+          Live 3D eyewear try-on for your Shopify store.
         </p>
         {showForm && (
           <Form className={styles.form} method="post" action="/auth/login">
@@ -39,16 +39,13 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Your own frames</strong>. Prepare your eyewear products as 3D frames from inside Shopify.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Live on the product page</strong>. Shoppers try frames on through their camera, with no app to install.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Private by design</strong>. The camera feed stays on the shopper&apos;s device.
           </li>
         </ul>
       </div>
