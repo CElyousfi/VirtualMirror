@@ -74,7 +74,7 @@ export default function Products() {
           <s-select
             label="Show"
             value={filter}
-            onChange={(e) => setParams({ filter: (e.currentTarget as HTMLSelectElement).value })}
+            onChange={(e) => setParams({ filter: e.currentTarget.value })}
           >
             {FILTERS.map((f) => (
               <s-option key={f.value} value={f.value}>
@@ -111,7 +111,7 @@ export default function Products() {
                   accessibilityLabel="Select all"
                   checked={allSelected}
                   onChange={(e) =>
-                    setSelected((e.currentTarget as HTMLInputElement).checked ? products.map((p) => p.id) : [])
+                    setSelected(e.currentTarget.checked ? products.map((p) => p.id) : [])
                   }
                 />
               </s-table-header>
@@ -132,7 +132,7 @@ export default function Products() {
                         accessibilityLabel={`Select ${p.title}`}
                         checked={selected.includes(p.id)}
                         onChange={(e) => {
-                          const on = (e.currentTarget as HTMLInputElement).checked;
+                          const on = e.currentTarget.checked;
                           setSelected((s) => (on ? [...s, p.id] : s.filter((x) => x !== p.id)));
                         }}
                       />

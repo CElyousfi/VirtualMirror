@@ -180,7 +180,7 @@ function AssetCard({ group }: { group: Group }) {
                   label={`I accept: ${c.message}`}
                   checked={accepted.includes(c.id)}
                   onChange={(e) => {
-                    const on = (e.currentTarget as HTMLInputElement).checked;
+                    const on = e.currentTarget.checked;
                     setAccepted((s) => (on ? [...s, c.id] : s.filter((x) => x !== c.id)));
                   }}
                 />
