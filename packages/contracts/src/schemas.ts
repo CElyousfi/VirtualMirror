@@ -90,6 +90,8 @@ export type ReadinessReport = z.infer<typeof ReadinessReportSchema>;
 export const StorefrontAssetSchema = z.object({
   /** Shopify variant numeric IDs this asset represents, or ["*"] for all. */
   variantIds: z.array(z.string()).min(1),
+  /** Shopper-facing variant label, e.g. "Black" or "Tortoise / 52". */
+  label: z.string().max(80).optional(),
   glbUrl: z.string().url(),
   bridgeM: Vec3Schema,
   frameWidthM: z.number().positive(),

@@ -1,0 +1,52 @@
+{%- comment -%}
+  Virtual Mirror "Try On Live" block.
+  Renders only when this product has a published try-on manifest, written by
+  the app to the app-owned metafield $app.vm_manifest. The ~2 KB loader runs
+  on every product page; the widget bundle (camera + 3D) loads only on click.
+{%- endcomment -%}
+{%- liquid
+  assign vm_manifest = product.metafields['$app'].vm_manifest.value
+  assign vm_enabled = false
+  if vm_manifest and vm_manifest.enabled
+    assign vm_enabled = true
+  endif
+-%}
+{%- if vm_enabled -%}
+  <div class="vm-tryon" {{ block.shopify_attributes }}>
+    <button
+      type="button"
+      class="vm-tryon__button"
+      data-vm-open
+      data-product-title="{{ product.title | escape }}"
+      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+      data-widget-src="{{ 'virtual-mirror.js' | asset_url }}"
+      data-cart-add-url="{{ routes.cart_add_url }}.js"
+      data-cart-url="{{ routes.cart_url }}"
+      data-accent="{{ block.settings.button_color }}"
+      data-accent-text="{{ block.settings.text_color }}"
+      style="--vm-btn-bg: {{ block.settings.button_color }}; --vm-btn-fg: {{ block.settings.text_color }};"
+    >
+      {{- block.settings.label | escape -}}
+    </button>
+    <script type="application/json" data-vm-manifest>{{ vm_manifest | json }}</script>
+  </div>
+{%- elsif request.design_mode -%}
+  <div class="vm-tryon vm-tryon--placeholder" {{ block.shopify_attributes }}>
+    Virtual Mirror: this product has no published 3D frame yet. The button appears here once you publish one in the Virtual Mirror app.
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Try On Live",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "javascript": "vm-loader.js",
+  "stylesheet": "vm-block.css",
+  "settings": [
+    { "type": "text", "id": "label", "label": "Button label", "default": "Try On Live" },
+    { "type": "color", "id": "button_color", "label": "Button colour", "default": "#111111" },
+    { "type": "color", "id": "text_color", "label": "Text colour", "default": "#ffffff" }
+  ]
+}
+{% endschema %}

@@ -13,6 +13,7 @@ export interface PublishableAsset {
   merchantApprovedAt: Date | string | null;
   fileUrl: string | null;
   variantIds: string[];
+  label?: string;
   bridgeM: [number, number, number];
   frameWidthM: number;
   hasScaleSource: boolean;
@@ -32,6 +33,7 @@ export function buildManifest(assets: PublishableAsset[], now = new Date()): Sto
     updatedAt: now.toISOString(),
     assets: publishable.map((a) => ({
       variantIds: a.variantIds,
+      ...(a.label ? { label: a.label } : {}),
       glbUrl: a.fileUrl!,
       bridgeM: a.bridgeM,
       frameWidthM: a.frameWidthM,

@@ -143,6 +143,7 @@ export async function syncProductManifest(admin: AdminGraphql, shop: string, pro
       merchantApprovedAt: a.merchantApprovedAt,
       fileUrl: a.fileUrl,
       variantIds: JSON.parse(a.variantIdsJson) as string[],
+      label: a.variantLabel,
       bridgeM: (JSON.parse(a.anchorsJson) as AssetAnchors).bridge as [number, number, number],
       frameWidthM: a.frameWidthM,
       hasScaleSource: (JSON.parse(a.readinessJson) as ReadinessReport).hasScaleSource,
