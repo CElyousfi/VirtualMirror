@@ -8,6 +8,11 @@ const CSS = `
   display: flex; flex-direction: column; }
 .stage { position: relative; flex: 1; overflow: hidden; }
 .mirror { position: absolute; inset: 0; transform: scaleX(-1); }
+.mirror.unmirrored { transform: none; }
+.qa { position: absolute; left: 8px; top: 8px; right: 64px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.qa-label { background: #facc15; color: #111; font: 600 12px/1.3 ui-monospace, Menlo, monospace; padding: 4px 8px; border-radius: 6px; white-space: pre-line; }
+.qa button { padding: 6px 10px; border-radius: 6px; border: 0; background: #fff; color: #111; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+.qa button[aria-pressed="true"] { background: #ef4444; color: #fff; }
 .mirror video, .mirror canvas, .mirror .debug { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mirror .debug { pointer-events: none; }
 .status { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); max-width: calc(100% - 96px);
@@ -44,6 +49,9 @@ export interface Ui {
   setStatus(text: string): void;
   showError(text: string): void;
   setStats(text: string | null): void;
+  setMirrored(mirrored: boolean): void;
+  setQaBanner(label: string): void;
+  setQaControls(h: { capture: () => void; toggleRecording: (() => Promise<boolean>) | null }): void;
   setVariants(items: { key: string; label: string; selected: boolean }[], onPick: (key: string) => void): void;
   setGlassesToggle(visible: boolean): void;
   setCart(state: "hidden" | "idle" | "busy" | "done" | "error", cartUrl?: string): void;
@@ -69,6 +77,7 @@ export function createUi(opts: { productTitle: string; accentColor?: string; acc
         <div class="status" role="status" aria-live="polite"></div>
         <div class="error" role="alert"><p></p></div>
         <div class="stats" hidden></div>
+        <div class="qa" hidden><span class="qa-label"></span><button type="button" class="qa-capture">Capture</button><button type="button" class="qa-record" aria-pressed="false">Record (local)</button></div>
         <button class="close" type="button" aria-label="${MSG.close}">×</button>
       </div>
       <div class="bar">
@@ -118,6 +127,26 @@ export function createUi(opts: { productTitle: string; accentColor?: string; acc
       error.querySelector("p")!.textContent = t;
       error.classList.add("on");
       status.textContent = "";
+    },
+    setMirrored(m) {
+      $<HTMLDivElement>(".mirror").classList.toggle("unmirrored", !m);
+    },
+    setQaBanner(label) {
+      $<HTMLDivElement>(".qa").hidden = false;
+      $<HTMLSpanElement>(".qa-label").textContent = `QA LAB · ${label}`;
+    },
+    setQaControls(h) {
+      $<HTMLButtonElement>(".qa-capture").addEventListener("click", h.capture);
+      const rec = $<HTMLButtonElement>(".qa-record");
+      if (!h.toggleRecording) {
+        rec.hidden = true;
+        return;
+      }
+      rec.addEventListener("click", async () => {
+        const on = await h.toggleRecording!();
+        rec.setAttribute("aria-pressed", String(on));
+        rec.textContent = on ? "Stop & save recording" : "Record (local)";
+      });
     },
     setStats(t) {
       stats.hidden = t === null;

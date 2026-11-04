@@ -29,7 +29,9 @@
     "shopify": "shopify",
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
-    "vite": "vite"
+    "vite": "vite",
+    "qa": "pnpm --filter @vm/widget qa",
+    "qa:phone": "pnpm --filter @vm/widget qa:https"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

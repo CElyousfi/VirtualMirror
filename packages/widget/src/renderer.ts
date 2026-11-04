@@ -33,7 +33,31 @@ const FACE_OCCLUDER_OFFSET_CM = -0.4;
 const OCCLUDER = { centreCm: [0, 1.0, -3.0] as Vec3, radiiCm: [7.0, 9.5, 8.0] as Vec3 };
 
 /** Cap environment reflections so they never shift the frame's perceived colour much. */
-const ENV_INTENSITY = 0.6;
+export const ENV_INTENSITY = 0.6;
+
+/** Material treatment applied to every loaded frame. Shared with the QA studio viewer. */
+export function prepareGlassesMaterials(root: Object3D): void {
+  root.traverse((o) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as (Material & { envMapIntensity?: number })[];
+    mats.forEach((m) => {
+      if ("envMapIntensity" in m) m.envMapIntensity = ENV_INTENSITY;
+    });
+    mesh.renderOrder = 1;
+  });
+}
+
+/** Renderer settings shared by the mirror and the QA studio viewer. */
+export function configureRenderer(r: WebGLRenderer, scene: Scene): PMREMGenerator {
+  r.setClearColor(0x000000, 0);
+  r.outputColorSpace = SRGBColorSpace;
+  // Neutral tone mapping is designed to keep product colours faithful.
+  r.toneMapping = NeutralToneMapping;
+  const pmrem = new PMREMGenerator(r);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  return pmrem;
+}
 
 export interface RendererStats {
   pixelRatio: number;
@@ -57,14 +81,8 @@ export class MirrorRenderer {
     opts: { onContextLost?: () => void; showOccluder?: boolean } = {},
   ) {
     this.renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
-    this.renderer.setClearColor(0x000000, 0);
-    this.renderer.outputColorSpace = SRGBColorSpace;
-    // Neutral tone mapping is designed to keep product colours faithful.
-    this.renderer.toneMapping = NeutralToneMapping;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-
-    this.pmrem = new PMREMGenerator(this.renderer);
-    this.scene.environment = this.pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.pmrem = configureRenderer(this.renderer, this.scene);
 
     this.camera = new PerspectiveCamera(FACE_GEOMETRY_CAMERA.verticalFovDeg, 4 / 3, FACE_GEOMETRY_CAMERA.near, FACE_GEOMETRY_CAMERA.far);
     this.face.matrixAutoUpdate = false;
@@ -122,15 +140,7 @@ export class MirrorRenderer {
       disposeObject(this.glasses);
     }
     this.glasses = gltf.scene;
-    this.glasses.traverse((o) => {
-      const mesh = o as Mesh;
-      if (!mesh.isMesh) return;
-      const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as (Material & { envMapIntensity?: number })[];
-      mats.forEach((m) => {
-        if ("envMapIntensity" in m) m.envMapIntensity = ENV_INTENSITY;
-      });
-      mesh.renderOrder = 1;
-    });
+    prepareGlassesMaterials(this.glasses);
     // ASSET (metres) -> FACE (cm): one documented conversion, see @vm/contracts.
     this.holder.matrix.fromArray(assetToFaceMatrix({ assetBridgeM: bridgeM }));
     this.holder.matrixWorldNeedsUpdate = true;
@@ -171,6 +181,13 @@ export class MirrorRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** GPU name for reports, when the browser exposes it. */
+  gpuDescription(): string | null {
+    const gl = this.renderer.getContext();
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    return ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
+  }
+
   dispose(): void {
     if (this.glasses) disposeObject(this.glasses);
     disposeObject(this.occluder);
@@ -182,7 +199,7 @@ export class MirrorRenderer {
   }
 }
 
-function disposeObject(root: Object3D): void {
+export function disposeObject(root: Object3D): void {
   root.traverse((o) => {
     const mesh = o as Mesh;
     if (!mesh.isMesh) return;

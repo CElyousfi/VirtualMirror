@@ -34,10 +34,33 @@ export async function startCamera(video: HTMLVideoElement): Promise<MediaStream>
   return stream;
 }
 
+/**
+ * Play a local or same-origin video file through the same pipeline as the
+ * camera (QA replay). Never uploaded anywhere.
+ */
+export async function startVideoFile(video: HTMLVideoElement, url: string, loop = true): Promise<void> {
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+  video.loop = loop;
+  video.crossOrigin = "anonymous";
+  video.srcObject = null;
+  video.src = url;
+  if (video.readyState < 1) await new Promise((r, j) => {
+    video.addEventListener("loadedmetadata", r, { once: true });
+    video.addEventListener("error", () => j(new Error("Video could not be loaded")), { once: true });
+  });
+  await video.play();
+}
+
 export function stopCamera(stream: MediaStream | null, video?: HTMLVideoElement): void {
   stream?.getTracks().forEach((t) => t.stop());
   if (video) {
     video.pause();
     video.srcObject = null;
+    if (video.getAttribute("src")) {
+      video.removeAttribute("src");
+      video.load();
+    }
   }
 }
