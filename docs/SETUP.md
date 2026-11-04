@@ -4,6 +4,34 @@ These steps need your Shopify account, so they cannot be run from the build sand
 
 Time: about 30 minutes the first time.
 
+## Which steps need your Shopify login
+
+Claude cannot do these: they need your Shopify account, a browser session, and a phone. Use a **development store** only, never a live merchant store.
+
+| Step | Needs your Shopify login? | Where it happens |
+| --- | --- | --- |
+| 1.4 Create Partner / Dev Dashboard account | **Yes** | partners.shopify.com |
+| 1.5 Create a development store | **Yes** | Dev Dashboard |
+| 2 Clone, install, `pnpm check` | No | Your computer |
+| 3 `pnpm config:link` | **Yes** (CLI opens a browser to log in) | Your computer + browser |
+| 4 `pnpm dev`, approve install | **Yes** | Your computer + Shopify admin |
+| 5 Sync, prepare, approve, publish | **Yes** (inside the Shopify admin) | Virtual Mirror app in admin |
+| 6 Add the Try On Live block | **Yes** (theme editor) | Shopify admin |
+| 7 Try on a phone | No Shopify login; only the dev store's storefront password | Phone browser |
+| 8 Diagnostics | **Yes** (inside the Shopify admin) | Virtual Mirror app in admin |
+
+## Integration test checklist
+
+This is the Milestone 1 integration test. Record each line in `docs/qa-reports/` (see [VISUAL_QA.md](VISUAL_QA.md)).
+
+| # | Confirm | Step | Evidence to keep |
+| --- | --- | --- | --- |
+| I-1 | The app syncs a test eyewear product | 5.2 | Screenshot of Products showing it as "Eyewear" |
+| I-2 | The product is associated with the demo GLB | 5.4 | Product page card shows "Generic demo frame" and its checks |
+| I-3 | The Try On Live button is published on the storefront | 5.5 + 6 | Overview step 3 says "Added to your live theme"; button visible on the product page |
+| I-4 | A continuous camera feed opens on a real phone | 7.2 | Screen recording of at least 30 s |
+| I-5 | The eyewear is tracked and rendered | 7.2–7.3 | Same recording + `?vm_debug=1` screenshot with fps and detect time |
+
 ## 1. One-time prerequisites
 
 1. Install Node.js 22.12 or newer (`node --version`).

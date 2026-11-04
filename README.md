@@ -26,6 +26,8 @@ pnpm lint             # ESLint
 pnpm build            # build widget bundle + app
 pnpm dev              # build widget, then `shopify app dev` (needs your Shopify Partner login)
 pnpm check            # typecheck + lint + test + build
+pnpm qa               # internal QA Lab (docs/VISUAL_QA.md)
+pnpm qa:phone         # QA Lab over HTTPS for a phone on the same Wi-Fi
 ```
 
 First-time Shopify setup is in [docs/SETUP.md](docs/SETUP.md).

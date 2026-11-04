@@ -2,6 +2,22 @@
 
 Newest first. Each entry: what, why, and what would change it.
 
+## D-016 · MediaPipe usage telemetry disabled at build time (2026-11-04)
+**What:** A Vite plugin rewrites MediaPipe's single logging send (POST to `odml.pa.googleapis.com/v1/log`, ~140 bytes of protobuf: task type, library version, timings; no image data) into a no-op. The build fails if the call site is not found exactly once; CI fails if the endpoint appears in the bundle.
+**Why:** Found in the QA Lab network log. It runs on every tracker start in shoppers' browsers, has no off switch, and was not covered by our privacy wording. Apache-2.0 permits modification.
+**Founder decision pending:** keep disabled (recommended), or re-enable and disclose it.
+
+## D-015 · QA reports cannot overstate results (2026-11-04)
+**What:** Report rules in code: generic frames cannot pass product fidelity; pass/fail need a written observation; anything untested makes the verdict INCOMPLETE; live-renderer and automatic-reconstruction tracks are separate; prerecorded videos need a recorded consent basis. No numeric quality scores.
+
+## D-014 · One frame pipeline for storefront and QA (2026-11-04)
+**What:** `stepPipeline` (detect, smooth, place, render) is shared by the storefront mirror and QA replay; the studio viewer reuses the mirror's material, tone-mapping and environment setup.
+**Why:** QA results must describe the code shoppers run.
+
+## D-013 · QA Lab lives in the widget package as a dev page (2026-11-04)
+**What:** `packages/widget/dev/qa-lab.html`, served by Vite (`pnpm qa`, `pnpm qa:phone` over HTTPS). Not in the Shopify admin, not in the storefront bundle.
+**Why:** It needs camera access (blocked inside the admin iframe), imports the real renderer source directly, and must never ship to merchants.
+
 ## D-012 · Canonical face mesh as the face occluder (2026-11-03)
 **What:** Render MediaPipe's canonical face mesh (Apache-2.0, 468 vertices, 898 triangles) depth-only, 4 mm behind the face, plus a head ellipsoid.
 **Why:** The headless camera test showed the far temple drawing across the lens with only an ellipsoid. The canonical mesh is MediaPipe's documented approach.
