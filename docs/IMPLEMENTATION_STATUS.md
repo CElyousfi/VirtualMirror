@@ -28,6 +28,7 @@ Last updated: 2026-11-04 · Milestone 1 (Shopify vertical slice) + QA Lab · com
 | Admin UI | Overview (sync, setup checklist, theme block status), Products (filter, bulk include/exclude), Product detail (prepare, review, approve, publish, hide, delete), Diagnostics | Typecheck verified in CI; never rendered |
 | `PreparationMethod` | Contract in `@vm/contracts`; `existing-glb` and `demo-template` implemented | Verified locally (unit tests on real GLB bytes) |
 | `existing-glb` | Parse, geometry, unit auto-fix (cm/mm), orientation, size and triangle budgets, bridge anchor, front-width measurement | Verified locally (8 tests) |
+| `FrameModel` + builder | Measurable frame description (mm) → swept rims, lens shells in the groove, end pieces, hinges, bridge, tapered temples → GLB (metres, anchors, clear coat). QA Lab can build one from JSON or the generic acetate example | Verified locally: 17 tests (closed outward shells, dimensions within 0.1 mm, groove fit, canonical-head clearance, budget) and rendered in the QA Lab studio (headless, software WebGL). Only a **generic** example exists; no real product modelled yet. No merchant-facing method yet |
 | Demo frame | Parametric generic frame, 138 mm, 804 triangles, 28 KB | Verified locally; it is **not** a reproduction of any product and the UI says so |
 | Units / coordinates | One documented conversion ASSET (m) → FACE (cm); canonical landmarks copied from MediaPipe | Verified locally (12 tests) and visually in the headless test (projected nasion lands on MediaPipe's 2D nasion) |
 | GLB storage | Staged upload → generic `fileCreate` → poll READY → delete; fails loudly if Shopify makes a Model3d instead | Verified locally with a fake Admin client and fake upload endpoint; **untested on Shopify** |
@@ -49,7 +50,9 @@ Last updated: 2026-11-04 · Milestone 1 (Shopify vertical slice) + QA Lab · com
 | Loader script | 2.6 KB, 1.0 KB gzipped | |
 | MediaPipe WASM download | 14.6 MB uncompressed (`vision_wasm_internal.wasm`), compressed size over the CDN not measured | Package file size |
 | Face model download | 3.76 MB | `face_landmarker.task` float16 v1 |
-| Unit tests | 90 passing | Local, 2026-11-04 (CI run on push) |
+| Unit tests | 114 passing | Local, 2026-11-04 (CI run on push) |
+| Generic FrameModel GLB | 32,688 triangles, 620 KB, 147.5 mm | `GENERIC_ACETATE_FRAME`, 52-18-145 |
+| Black acetate, studio front view, interior pixels | median 54 sRGB (p25 41, p95 104); was 76 with double specular | QA Lab, headless SwiftShader, studio-v1; not yet compared with a real frame |
 | Headless tracking | 33–38 of 33–38 frames tracked on a rotated three-quarter face | Headless Chromium 153, SwiftShader software WebGL, 1280×720 fake camera |
 | Headless frame rate | ~1 fps, ~1000 ms per detection | **Software rendering only. Says nothing about phones.** |
 
@@ -63,6 +66,7 @@ No phone or desktop-GPU performance numbers exist yet. None will be written unti
 4. **First-open latency is unmeasured and probably high on mobile data**: 14.6 MB WASM plus 3.8 MB model from public CDNs.
 5. **Third-party CDNs at runtime**: jsDelivr (WASM) and Google Cloud Storage (model). Self-hosting is a later decision.
 6. **Materials: black frames rendered mid-grey** (sRGB 101). **Fixed 2026-11-04** for the studio and the default live lighting: calibrated `studio-v1` environment, intensity bug fixed, no tone mapping; black front now sRGB 34, colours within ±2 % (docs/REALISM_PLAN.md §1.5). Still to judge against real product photos; live lighting does not yet follow the shopper's room.
+6b. **Merchant GLBs lost material extensions on unit fix** (clear coat, transmission, IOR …). **Fixed 2026-11-04**, tested.
 7. **The widget bundle includes Zod** (~40 KB gzipped) for manifest validation; could be replaced with a hand-written check.
 8. **Admin has no 3D preview yet.** Merchants judge the frame on the storefront. A fixed reference-head preview is Milestone 3.
 9. **Prisma engines could not be downloaded in the build sandbox**, so the Prisma-backed code is verified by CI typecheck only, not executed.

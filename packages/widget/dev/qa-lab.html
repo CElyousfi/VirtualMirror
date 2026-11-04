@@ -92,6 +92,10 @@
             <div><button id="useDemo" type="button">Use generic demo frame</button></div>
           </div>
           <div class="row">
+            <div><label for="frameModelFile">FrameModel JSON (built here into a GLB)</label><input id="frameModelFile" type="file" accept=".json,application/json" /></div>
+            <div><button id="useGenericFrameModel" type="button">Use generic FrameModel (acetate example)</button></div>
+          </div>
+          <div class="row">
             <div><label for="provenance">Provenance (required)</label>
               <select id="provenance">
                 <option value="">Choose…</option>
@@ -103,6 +107,7 @@
               <select id="method">
                 <option value="demo-template">demo-template</option>
                 <option value="existing-glb">existing-glb (made by a person)</option>
+                <option value="frame-model">frame-model (built from a FrameModel)</option>
                 <option value="silhouette-2.5d">silhouette-2.5d</option>
                 <option value="other">other</option>
               </select></div>

@@ -2,6 +2,16 @@
 
 Newest first. Each entry: what, why, and what would change it.
 
+## D-020 · Acetate has a single reflecting interface (2026-11-04)
+**What:** When a FrameModel acetate uses clear coat, the exporter sets `KHR_materials_specular` to 0 on the body; metal keeps its own specular.
+**Why:** Clear coat adds a lobe on top of the base specular. Measured on a black frame: median 76 sRGB doubled vs 54 single. This is the material equivalent of "don't compensate with stronger reflections".
+**Revisit:** S0.2 material library, against S1 photos.
+
+## D-019 · One measurable frame description: `FrameModel` (2026-11-04)
+**What:** Frames are described in millimetres (lens contour, rim profile widths and radii, DBL, wrap, base curve, end piece, hinge, temples, materials) and built into a GLB by one builder. Manual authoring now, automatic fitting later, both produce the same object.
+**Why:** Everything shoppers see can be traced to numbers a person can check against a real frame, and automatic methods can be scored parameter by parameter against a hand-authored reference.
+**Revisit:** Frames the model cannot express (rimless, decorative temples) need manufacturer GLBs via `existing-glb`.
+
 ## D-018 · No tone mapping (2026-11-04)
 **What:** `NoToneMapping` instead of Khronos PBR Neutral.
 **Why:** Measured: with exposure normalised, Neutral darkens base colours by 81 % (0.03) to 5 % (0.7); no tone mapping reproduces them within ±2 %. Frames are composited over camera video that is not tone-mapped. My earlier code comment claiming Neutral leaves values below 0.8 untouched was wrong.

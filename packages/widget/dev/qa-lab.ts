@@ -4,7 +4,8 @@
  * uploaded; files stay in the browser until downloaded.
  */
 import { PROVENANCE_LABEL, mToMm, type AssetProvenance } from "@vm/contracts";
-import { inspectDocument, readGlb } from "@vm/engine-geometry";
+import { FrameModelSchema } from "@vm/contracts";
+import { GENERIC_ACETATE_FRAME, buildFrameModelGlb, inspectDocument, readGlb } from "@vm/engine-geometry";
 import { COMMIT, type SessionStats } from "../src/index";
 import { StudioViewer, compareTraces, replayVideo, type RenderMode, type StudioView } from "../src/qa";
 import { downloadBlob, downloadDataUrl, stampLabel } from "../src/capture";
@@ -71,10 +72,16 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 async function loadAsset(bytes: Uint8Array, fileName: string) {
   const doc = await readGlb(bytes);
   const info = inspectDocument(doc, bytes.byteLength);
-  const extras = doc.getRoot().listNodes().map((n) => n.getExtras() as { vm?: { kind?: string } }).find((e) => e?.vm?.kind);
+  const extras = doc.getRoot().listNodes().map((n) => n.getExtras() as { vm?: { kind?: string; provenance?: string; measuredMm?: Record<string, number> } }).find((e) => e?.vm?.kind);
+  const fm = extras?.vm?.kind === "frame-model" ? extras.vm : null;
   if (extras?.vm?.kind === "demo-template") {
     $<HTMLSelectElement>("provenance").value = "generic";
     $<HTMLSelectElement>("method").value = "demo-template";
+  } else if (fm) {
+    $<HTMLSelectElement>("method").value = "frame-model";
+    // A FrameModel declares its provenance; only "generic" is taken on trust,
+    // anything claiming to be a product must be confirmed by the tester.
+    $<HTMLSelectElement>("provenance").value = fm.provenance === "generic" ? "generic" : "";
   } else {
     // Never guess: the tester must say where this model came from.
     $<HTMLSelectElement>("provenance").value = "";
@@ -102,7 +109,13 @@ async function loadAsset(bytes: Uint8Array, fileName: string) {
     <dt>Height</dt><dd>${a.heightMm} mm</dd>
     <dt>Depth (Z)</dt><dd>${a.depthMm} mm</dd>
     <dt>Triangles</dt><dd>${a.triangles.toLocaleString("en")}</dd>
-    <dt>Bridge anchor</dt><dd>${info.bridgeNode ? "VM_Bridge node" : "origin (no VM_Bridge node)"}</dd>`;
+    <dt>Bridge anchor</dt><dd>${info.bridgeNode ? "VM_Bridge node" : "origin (no VM_Bridge node)"}</dd>${
+      fm?.measuredMm
+        ? `<dt>FrameModel (as built)</dt><dd>${(["lensWidth", "lensHeight", "bridgeWidth", "frontWidth", "templeLength"] as const)
+            .map((k) => `${k} ${fm.measuredMm![k]?.toFixed(1)} mm`)
+            .join(" · ")}</dd>`
+        : ""
+    }`;
   refreshProvenance();
   refreshDims();
 }
@@ -115,6 +128,18 @@ $("useDemo").addEventListener("click", async () => {
   const res = await fetch("/demo-frame.glb");
   await loadAsset(new Uint8Array(await res.arrayBuffer()), "demo-frame.glb");
 });
+
+async function loadFrameModel(json: unknown, fileName: string) {
+  const parsed = FrameModelSchema.safeParse(json);
+  if (!parsed.success) return alert(`Not a valid FrameModel:\n${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("\n")}`);
+  const res = await buildFrameModelGlb(parsed.data);
+  await loadAsset(res.glb, fileName.replace(/\.json$/i, "") + ".glb");
+}
+$("frameModelFile").addEventListener("change", async (e) => {
+  const f = (e.target as HTMLInputElement).files?.[0];
+  if (f) await loadFrameModel(JSON.parse(await f.text()), f.name);
+});
+$("useGenericFrameModel").addEventListener("click", () => loadFrameModel(GENERIC_ACETATE_FRAME, "generic-acetate-frame-model.json"));
 
 // ---------------------------------------------------------------- product
 

@@ -144,6 +144,34 @@ Honest limit: this covers full-rim and semi-rim acetate and metal frames well. D
 
 The studio flag is right for a product studio, not for a shopper's room. Live lighting from the camera image is S2.
 
+### 1.6 S0.3 result (2026-11-04)
+
+`FrameModel` (`packages/contracts/src/frame-model.ts`, millimetres, Zod-validated) and its builder (`packages/engine-geometry/src/frame-model/`) exist. Lens contour → rounded rim profile swept around it (per-region face widths), base curve and wrap applied about the nasal edge, lens shell tucked 0.7 mm into the groove, swept end pieces, hinge knuckles, arched bridge, tapered temples with an ear bend. Exported as a GLB in metres with `VM_Bridge`, `VM_NoseContact`, `VM_Hinge_L/R`, `VM_TempleTip_L/R`, the measured dimensions and the full model in `extras`.
+
+Checked by tests (`frame-model.test.ts`, 17 tests):
+
+| Acceptance | Result |
+| --- | --- |
+| Normals outward | Every shell (2 rims, 2 end pieces, bridge, 2 temples, 6 knuckles, 2 lenses) is closed, consistently wound and has positive volume. The first build had every tube and both lenses inside out; the test caught it. |
+| Dimensions within 0.1 mm | DBL 18.00 mm and lens width/height = opening + groove within 0.1 mm (flat, no wrap). With 5° wrap and base 4 the as-built DBL is 17.73 mm; `measured` reports what was built. |
+| Lens fits the groove | Lens edge inside the rim's depth and inside its outer edge |
+| Temples clear the canonical head | Inner temple surface outside MediaPipe's face-edge landmark from ear depth back; tips 50 mm+ behind it |
+| ≤ 60 k triangles, ≤ 1.5 MB | Generic example: 32,688 triangles, 620 KB, 147.5 mm wide |
+
+Not yet: UVs along the sweeps (needed for patterned acetate), a merchant-facing `PreparationMethod` (a FrameModel needs the S0.4 editor first; the QA Lab builds one from JSON), nose pads and semi-rim styles.
+
+**Material defect found and fixed while rendering it.** Polished acetate has one reflecting surface. glTF's clear coat sits *on top of* the base material's own specular, so "acetate + clear coat" reflected twice. Measured on the generic black frame in the QA Lab studio (front view, interior frame pixels, sRGB):
+
+| Material | p25 | median | p95 |
+| --- | --- | --- | --- |
+| Base specular + clear coat (double) | 63 | 76 | 124 |
+| Single smooth surface, roughness 0.08 | 39 | 54 | 111 |
+| Clear coat over a body with base specular off (`KHR_materials_specular` = 0) | 41 | 54 | 104 |
+
+The exporter now turns the base specular off under an acetate clear coat. The remaining median of 54 is rounded rim faces mirroring the studio's bright upper surround at grazing angles. Whether that matches a real black frame in a comparable light is not known until S1's photos; the lighting is not being tuned to taste in the meantime.
+
+The same work found that `rescaleToMetres` (merchant GLB unit fix) re-wrote files without registering glTF extensions, silently dropping clear coat, transmission, IOR etc. from merchants' models. Fixed (`glbIO()` registers all Khronos extensions) and tested.
+
 ## 3. Reference-asset test plan (one real black acetate pair)
 
 1. **Capture** (founder, §5).
@@ -166,7 +194,7 @@ Steps marked ✱ need no real product and start now.
 | --- | --- | --- |
 | ✱ S0.1 | Lighting fix: intensity bug, calibrated studio environment, exposure, tone mapping | 18 % grey card reads 0.18 ± 0.01 linear; matte base colours 0.03–0.7 reproduced within 5 %; reflection < 25 % of a flat black acetate front at normal incidence; `scripts/calibration/run.cjs` passes in CI. **Done 2026-11-04** (§1.5) |
 | ✱ S0.2 | Material library (acetate clear coat, translucent acetate, metal, lens Fresnel) | Lens reflectance ≈ 4 % at 0° and ≥ 15 % at 70°; black acetate body stays ≤ sRGB 45 away from highlights |
-| ✱ S0.3 | `FrameModel` + builder | Dimensions within 0.1 mm of the model; lens fits the rim groove; temples clear the canonical head; normals outward; ≤ 60 k triangles, ≤ 1.5 MB |
+| ✱ S0.3 | `FrameModel` + builder | Dimensions within 0.1 mm of the model; lens fits the rim groove; temples clear the canonical head; normals outward; ≤ 60 k triangles, ≤ 1.5 MB. **Done 2026-11-04** (§1.6); UVs and merchant method still to do |
 | ✱ S0.4 | QA Lab contour tool + `FrameModel` editor | Digitised contour round-trips to within 0.2 mm on a synthetic test drawing |
 | ✱ S0.5 | Landmark-fitted occluder + nose anchor (maths, unit-tested) | Occluder vertices match landmark screen positions to < 0.5 px in tests |
 | S1 | Reference model of the real pair | Front silhouette overlap ≥ 95 % after scale alignment; measured dimensions within 1 mm; 3/4 and side reviewed with written notes |
