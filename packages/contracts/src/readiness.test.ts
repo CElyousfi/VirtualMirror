@@ -67,3 +67,13 @@ describe("StorefrontManifestSchema", () => {
     expect(StorefrontManifestSchema.safeParse(bad).success).toBe(false);
   });
 });
+
+describe("provenance", () => {
+  it("labels each method so generic frames are never mistaken for products", async () => {
+    const { provenanceForMethod, PROVENANCE_LABEL } = await import("./preparation");
+    expect(provenanceForMethod("demo-template")).toBe("generic");
+    expect(provenanceForMethod("existing-glb")).toBe("manual");
+    expect(provenanceForMethod("silhouette-2.5d")).toBe("automatic");
+    expect(PROVENANCE_LABEL.generic).toContain("not the product");
+  });
+});

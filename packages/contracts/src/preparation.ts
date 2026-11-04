@@ -76,3 +76,29 @@ export interface PreparationMethod {
     onProgress?: (p: PreparationProgress) => void,
   ): Promise<PreparedAsset>;
 }
+
+/**
+ * Where an asset's geometry came from. Shown on every QA view, capture and
+ * report so a generic demo frame is never mistaken for the real product.
+ */
+export type AssetProvenance = "generic" | "manual" | "automatic";
+
+export const PROVENANCE_LABEL: Record<AssetProvenance, string> = {
+  generic: "Generic frame (not the product)",
+  manual: "Manually prepared model",
+  automatic: "Automatically generated",
+};
+
+export function provenanceForMethod(method: PreparationMethodId): AssetProvenance {
+  switch (method) {
+    case "demo-template":
+      return "generic";
+    case "existing-glb":
+      // A GLB made by a person (3D artist, vendor, merchant).
+      return "manual";
+    case "silhouette-2.5d":
+      return "automatic";
+    default:
+      return "automatic";
+  }
+}

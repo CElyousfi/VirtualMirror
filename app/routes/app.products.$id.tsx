@@ -4,7 +4,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { groupVariantsForAssets, parseFrameDimensions, type ProductSnapshot } from "@vm/catalog";
-import type { ReadinessReport } from "@vm/contracts";
+import { PROVENANCE_LABEL, provenanceForMethod, type ReadinessReport } from "@vm/contracts";
 import { GLB_LIMITS } from "@vm/engine-geometry";
 import { authenticate } from "../shopify.server";
 import { getProduct, prismaCatalogRepo } from "../models/catalog.server";
@@ -146,6 +146,9 @@ function AssetCard({ group }: { group: Group }) {
               <s-stack direction="inline" gap="small-200">
                 <s-badge tone={STATE_TONE[a.state] ?? "neutral"}>{STATE_LABEL[a.state] ?? a.state}</s-badge>
                 <s-text color="subdued">{METHOD_LABEL[a.method] ?? a.method}</s-text>
+                <s-badge tone={provenanceForMethod(a.method) === "generic" ? "warning" : "neutral"}>
+                  {PROVENANCE_LABEL[provenanceForMethod(a.method)]}
+                </s-badge>
               </s-stack>
             ) : (
               <s-badge tone="neutral">Not prepared</s-badge>
