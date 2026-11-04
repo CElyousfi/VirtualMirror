@@ -58,3 +58,9 @@ jobs:
             echo "MediaPipe telemetry call site found in the widget bundle (see docs/DECISIONS.md D-016)"; exit 1
           fi
           echo "OK: no telemetry endpoint in the bundle"
+
+      - name: Renderer calibration (lighting exposure, colour fidelity)
+        run: |
+          npm install -g playwright@1.63.0
+          npx playwright install --with-deps chromium
+          NODE_PATH=$(npm root -g) node scripts/calibration/run.cjs

@@ -2,6 +2,15 @@
 
 Newest first. Each entry: what, why, and what would change it.
 
+## D-018 · No tone mapping (2026-11-04)
+**What:** `NoToneMapping` instead of Khronos PBR Neutral.
+**Why:** Measured: with exposure normalised, Neutral darkens base colours by 81 % (0.03) to 5 % (0.7); no tone mapping reproduces them within ±2 %. Frames are composited over camera video that is not tone-mapped. My earlier code comment claiming Neutral leaves values below 0.8 untouched was wrong.
+
+## D-017 · Calibrated studio lighting replaces RoomEnvironment (2026-11-04)
+**What:** `studio-v1` described as data (`core/lighting.ts`), exposure computed analytically so an 18 % grey card reads 0.18, applied via `scene.environmentIntensity`. Nothing bright within 30° of the camera axis; dark camera-side flag.
+**Why:** RoomEnvironment's on-axis softbox, mirrored by flat fronts, plus 0.76 stops of over-exposure made black frames mid-grey. The per-material cap I had written never worked (three.js ignores `material.envMapIntensity` with `scene.environment`).
+**Revisit:** S2, when live lighting comes from the camera image.
+
 ## D-016 · MediaPipe usage telemetry disabled at build time (2026-11-04)
 **What:** A Vite plugin rewrites MediaPipe's single logging send (POST to `odml.pa.googleapis.com/v1/log`, ~140 bytes of protobuf: task type, library version, timings; no image data) into a no-op. The build fails if the call site is not found exactly once; CI fails if the endpoint appears in the bundle.
 **Why:** Found in the QA Lab network log. It runs on every tracker start in shoppers' browsers, has no off switch, and was not covered by our privacy wording. Apache-2.0 permits modification.

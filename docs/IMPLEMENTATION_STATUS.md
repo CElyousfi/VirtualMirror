@@ -37,6 +37,7 @@ Last updated: 2026-11-04 · Milestone 1 (Shopify vertical slice) + QA Lab · com
 | QA Lab | Internal dev page (`pnpm qa`, `pnpm qa:phone`): provenance-labelled asset, studio viewer with front/3/4/side presets and photo overlay, dimension deltas, live mirror from camera or test video, deterministic replay, captures of real renderer output, local recording, Markdown/JSON reports with enforced rules | Verified locally in headless Chromium with synthetic media ([report](qa-reports/2026-11-04-sandbox-mechanics-check.md)); never used on a real device or with real footage |
 | Trace metrics and report rules | Tracking %, dropouts, detect avg/p95, jitter, head-angle ranges; generic frames cannot pass product fidelity; untested => INCOMPLETE | Verified locally (17 tests) |
 | Provenance | generic / manually prepared / automatically generated, shown in admin, QA Lab, captures and reports | Verified locally |
+| Renderer calibration | Calibrated studio lighting, exposure by analytic irradiance, no tone mapping | Verified locally: `scripts/calibration/run.cjs` 8/8 (grey card 0.188, colours ±2 %); runs in CI |
 | No third-party telemetry | MediaPipe's usage logging disabled at build time | Verified locally (network log: only runtime and model GETs) and guarded in CI |
 | Widget | Camera after click only, MediaPipe (GPU, CPU fallback), matrix layout detection, One Euro smoothing, canonical-face and head occluders, variant chips, add to cart, Esc/focus handling, adaptive resolution, per-session stats with commit SHA | Verified locally in headless Chromium with a fake camera: 8/8 smoke checks (`scripts/smoke`) |
 
@@ -61,7 +62,7 @@ No phone or desktop-GPU performance numbers exist yet. None will be written unti
 3. **Anchor and scale are estimates.** Bridge placement comes from the canonical (average) face; size is relative to that face, never a physical measurement. Calibration is Milestone 2.
 4. **First-open latency is unmeasured and probably high on mobile data**: 14.6 MB WASM plus 3.8 MB model from public CDNs.
 5. **Third-party CDNs at runtime**: jsDelivr (WASM) and Google Cloud Storage (model). Self-hosting is a later decision.
-6. **Materials: black frames render mid-grey in straight-on views.** The demo frame's flat front reflects the bright studio environment almost uniformly (QA Lab, 2026-11-04). To be fixed against real product photos in Milestone 2.
+6. **Materials: black frames rendered mid-grey** (sRGB 101). **Fixed 2026-11-04** for the studio and the default live lighting: calibrated `studio-v1` environment, intensity bug fixed, no tone mapping; black front now sRGB 34, colours within ±2 % (docs/REALISM_PLAN.md §1.5). Still to judge against real product photos; live lighting does not yet follow the shopper's room.
 7. **The widget bundle includes Zod** (~40 KB gzipped) for manifest validation; could be replaced with a hand-written check.
 8. **Admin has no 3D preview yet.** Merchants judge the frame on the storefront. A fixed reference-head preview is Milestone 3.
 9. **Prisma engines could not be downloaded in the build sandbox**, so the Prisma-backed code is verified by CI typecheck only, not executed.

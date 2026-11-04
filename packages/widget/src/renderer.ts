@@ -6,20 +6,21 @@ import {
   Matrix4,
   Mesh,
   MeshBasicMaterial,
-  NeutralToneMapping,
+  NoToneMapping,
   PerspectiveCamera,
   PMREMGenerator,
   Scene,
   SphereGeometry,
   SRGBColorSpace,
   WebGLRenderer,
-  type Material,
   type Object3D,
 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { FACE_GEOMETRY_CAMERA, assetToFaceMatrix, type Vec3 } from "@vm/contracts";
 import { CANONICAL_FACE_INDICES, CANONICAL_FACE_POSITIONS_CM } from "./canonical-face";
+import { STUDIO_V1, exposureFor } from "./core/lighting";
+import { buildStudioScene, disposeScene } from "./studio-environment";
 
 /**
  * Depth-only occluders, in FACE space (centimetres):
@@ -32,30 +33,47 @@ import { CANONICAL_FACE_INDICES, CANONICAL_FACE_POSITIONS_CM } from "./canonical
 const FACE_OCCLUDER_OFFSET_CM = -0.4;
 const OCCLUDER = { centreCm: [0, 1.0, -3.0] as Vec3, radiiCm: [7.0, 9.5, 8.0] as Vec3 };
 
-/** Cap environment reflections so they never shift the frame's perceived colour much. */
-export const ENV_INTENSITY = 0.6;
+/**
+ * Lighting environments. "studio-v1" is calibrated (core/lighting.ts): exposure
+ * normalised so an 18 % grey card facing the camera reads 0.18, and nothing
+ * bright on the camera axis. "room-legacy" is three.js RoomEnvironment, kept
+ * only so diagnostics can compare against the old look (it renders black
+ * frames grey: docs/REALISM_PLAN.md §1.2).
+ */
+export type EnvironmentId = "studio-v1" | "room-legacy";
 
 /** Material treatment applied to every loaded frame. Shared with the QA studio viewer. */
 export function prepareGlassesMaterials(root: Object3D): void {
   root.traverse((o) => {
     const mesh = o as Mesh;
     if (!mesh.isMesh) return;
-    const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as (Material & { envMapIntensity?: number })[];
-    mats.forEach((m) => {
-      if ("envMapIntensity" in m) m.envMapIntensity = ENV_INTENSITY;
-    });
+    // Note: material.envMapIntensity is ignored by three.js when lighting comes
+    // from scene.environment (it uses scene.environmentIntensity), so exposure
+    // is controlled in configureRenderer, not per material.
     mesh.renderOrder = 1;
   });
 }
 
 /** Renderer settings shared by the mirror and the QA studio viewer. */
-export function configureRenderer(r: WebGLRenderer, scene: Scene): PMREMGenerator {
+export function configureRenderer(r: WebGLRenderer, scene: Scene, environment: EnvironmentId = "studio-v1"): PMREMGenerator {
   r.setClearColor(0x000000, 0);
   r.outputColorSpace = SRGBColorSpace;
-  // Neutral tone mapping is designed to keep product colours faithful.
-  r.toneMapping = NeutralToneMapping;
+  // No tone mapping. Measured (dev/diagnose-materials.html, REALISM_PLAN §1.2):
+  // with exposure normalised, untone-mapped output reproduces base colours
+  // 0.03-0.7 within +-2 %, while Khronos PBR Neutral darkens them by 81 % (black)
+  // to 5 % (light) because of its toe. The camera video we composite over is
+  // not tone-mapped either. Specular highlights clip to white, as in a photo.
+  r.toneMapping = NoToneMapping;
   const pmrem = new PMREMGenerator(r);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  if (environment === "room-legacy") {
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 1;
+  } else {
+    const studio = buildStudioScene(STUDIO_V1);
+    scene.environment = pmrem.fromScene(studio, 0.01).texture;
+    disposeScene(studio);
+    scene.environmentIntensity = exposureFor(STUDIO_V1);
+  }
   return pmrem;
 }
 

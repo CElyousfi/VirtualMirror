@@ -49,6 +49,20 @@ Not causes: base colour, colour-space handling, tone mapping.
 
 The fix is **not** "darker material" or "weaker reflections" globally. It is a calibrated, off-axis lighting environment, correct intensity control, and curved geometry that produces highlights rather than a wash (§2.2).
 
+### 1.2b Correction found while fixing it: tone mapping
+
+My earlier statement that tone mapping is not a cause was incomplete. With exposure corrected, Khronos PBR Neutral tone mapping (which I had chosen, with a code comment claiming it leaves values below ~0.8 untouched) has a toe that squares dark values. Measured on matte plates under the calibrated studio:
+
+| Base colour | Expected | No tone mapping | Neutral |
+| --- | --- | --- | --- |
+| 0.03 | 0.031 | 0.032 (+2 %) | 0.006 (−81 %) |
+| 0.10 | 0.104 | 0.105 (+0 %) | 0.065 (−38 %) |
+| 0.18 | 0.188 | 0.188 (0 %) | 0.150 (−20 %) |
+| 0.40 | 0.417 | 0.423 (+1 %) | 0.381 (−9 %) |
+| 0.70 | 0.730 | 0.738 (+1 %) | 0.694 (−5 %) |
+
+Decision: no tone mapping for frames composited over (untone-mapped) camera video and in the studio; specular highlights clip to white as in a photo.
+
 ### 1.3 Renderer: `packages/widget/src/renderer.ts`
 
 | # | Problem | Where |
@@ -117,6 +131,19 @@ Honest limit: this covers full-rim and semi-rim acetate and metal frames well. D
 | **Hair segmentation** (MediaPipe hair segmenter, Apache-2.0) as a measured experiment; adopt only if it holds frame rate | F6 |
 | Large-yaw behaviour measured from replay; temples fade or hold rather than glitch | F7 |
 
+### 1.5 S0.1 result (2026-11-04)
+
+`studio-v1` lighting (`packages/widget/src/core/lighting.ts`, built by `studio-environment.ts`) replaces `RoomEnvironment`: overhead key, side strips, back rim light, nothing bright within 30° of the camera axis, a dark camera-side flag (product-photography convention), neutral white. Exposure is computed analytically (unit-tested) and applied with `scene.environmentIntensity`.
+
+| Measure | Before | After |
+| --- | --- | --- |
+| 18 % grey card | 0.305 | 0.188 |
+| Flat black acetate front, sRGB | 101 | 26 (diffuse ≈ 0.03 as authored) |
+| Reflection share of that front | ~63 % | 22 % |
+| Demo frame front, sRGB | 101 | 34 |
+
+The studio flag is right for a product studio, not for a shopper's room. Live lighting from the camera image is S2.
+
 ## 3. Reference-asset test plan (one real black acetate pair)
 
 1. **Capture** (founder, §5).
@@ -137,7 +164,7 @@ Steps marked ✱ need no real product and start now.
 
 | Step | Work | Acceptance (measured, not scored) |
 | --- | --- | --- |
-| ✱ S0.1 | Lighting fix: intensity bug, calibrated studio environment, exposure | 18 % grey card reads 0.18 ± 0.01 linear; flat black acetate at normal incidence ≤ sRGB 45; diagnostics committed and re-runnable |
+| ✱ S0.1 | Lighting fix: intensity bug, calibrated studio environment, exposure, tone mapping | 18 % grey card reads 0.18 ± 0.01 linear; matte base colours 0.03–0.7 reproduced within 5 %; reflection < 25 % of a flat black acetate front at normal incidence; `scripts/calibration/run.cjs` passes in CI. **Done 2026-11-04** (§1.5) |
 | ✱ S0.2 | Material library (acetate clear coat, translucent acetate, metal, lens Fresnel) | Lens reflectance ≈ 4 % at 0° and ≥ 15 % at 70°; black acetate body stays ≤ sRGB 45 away from highlights |
 | ✱ S0.3 | `FrameModel` + builder | Dimensions within 0.1 mm of the model; lens fits the rim groove; temples clear the canonical head; normals outward; ≤ 60 k triangles, ≤ 1.5 MB |
 | ✱ S0.4 | QA Lab contour tool + `FrameModel` editor | Digitised contour round-trips to within 0.2 mm on a synthetic test drawing |
