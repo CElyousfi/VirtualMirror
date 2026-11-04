@@ -1,4 +1,5 @@
 import { WebIO, type Document, type Node, type Scene } from "@gltf-transform/core";
+import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { getBounds } from "@gltf-transform/functions";
 import { guessUnitFromFrameWidth, type UnitGuess } from "@vm/contracts";
 
@@ -31,8 +32,16 @@ export interface GlbInspection {
   hasTransparentMaterial: boolean;
 }
 
+/**
+ * glTF I/O that knows the Khronos material and texture extensions, so reading
+ * and re-writing a merchant's GLB (e.g. unit fix) keeps clear coat,
+ * transmission, IOR, specular, texture transforms … instead of dropping them.
+ * Compressed geometry (Draco/meshopt) still needs decoders and is rejected.
+ */
+export const glbIO = (): WebIO => new WebIO().registerExtensions(ALL_EXTENSIONS);
+
 export async function readGlb(bytes: Uint8Array): Promise<Document> {
-  return new WebIO().readBinary(bytes);
+  return glbIO().readBinary(bytes);
 }
 
 function findNode(doc: Document, name: string): Node | undefined {
@@ -121,5 +130,5 @@ export async function rescaleToMetres(doc: Document, toMetres: number): Promise<
     wrapper.addChild(child);
   }
   scene.addChild(wrapper);
-  return new WebIO().writeBinary(doc);
+  return glbIO().writeBinary(doc);
 }
