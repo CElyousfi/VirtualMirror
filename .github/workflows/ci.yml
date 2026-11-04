@@ -51,3 +51,10 @@ jobs:
         run: |
           ls -l extensions/virtual-mirror/assets/
           gzip -c extensions/virtual-mirror/assets/virtual-mirror.js | wc -c | awk '{printf "virtual-mirror.js gzipped: %.1f KB\n", $1/1024}'
+
+      - name: Widget bundle sends no MediaPipe telemetry
+        run: |
+          if grep -q "odml.pa.googleapis.com" extensions/virtual-mirror/assets/virtual-mirror.js; then
+            echo "MediaPipe telemetry call site found in the widget bundle (see docs/DECISIONS.md D-016)"; exit 1
+          fi
+          echo "OK: no telemetry endpoint in the bundle"
