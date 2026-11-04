@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Virtual Mirror QA Lab (internal)</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: #18181b; background: #f4f4f5; }
+      header { background: #18181b; color: #fafafa; padding: 10px 16px; display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+      header h1 { font-size: 16px; margin: 0; }
+      header .warn { background: #facc15; color: #18181b; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+      header code { color: #a1a1aa; font-size: 12px; }
+      main { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 12px; padding: 12px; align-items: start; }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+      section { background: #fff; border: 1px solid #e4e4e7; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+      h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #52525b; margin: 0 0 8px; }
+      label { display: block; font-size: 12px; color: #52525b; margin: 6px 0 2px; }
+      input[type=text], input[type=number], select, textarea { width: 100%; padding: 6px 8px; border: 1px solid #d4d4d8; border-radius: 6px; font: inherit; background: #fff; }
+      .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+      .row > * { flex: 1; min-width: 70px; }
+      button { padding: 7px 10px; border: 1px solid #d4d4d8; border-radius: 6px; background: #fff; font: inherit; cursor: pointer; }
+      button.primary { background: #18181b; color: #fff; border-color: #18181b; }
+      button[aria-pressed=true] { background: #e4e4e7; }
+      button:disabled { opacity: .5; cursor: default; }
+      .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; }
+      .kv dt { color: #71717a; } .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+      .badge.generic { background: #fef3c7; color: #92400e; } .badge.manual { background: #dbeafe; color: #1e40af; }
+      .badge.automatic { background: #dcfce7; color: #166534; } .badge.unset { background: #fee2e2; color: #991b1b; }
+      #stage { position: relative; height: 62vh; min-height: 360px; background: repeating-conic-gradient(#f4f4f5 0% 25%, #fff 0% 50%) 50% / 20px 20px; border-radius: 8px; overflow: hidden; }
+      #stage img.overlay { position: absolute; left: 50%; top: 50%; max-width: 100%; max-height: 100%; pointer-events: none; transform-origin: center; }
+      #provBanner { position: absolute; left: 8px; top: 8px; z-index: 2; }
+      #viewName { position: absolute; right: 8px; top: 8px; z-index: 2; background: rgba(0,0,0,.6); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+      .thumbs { display: flex; gap: 6px; } .thumbs img { width: 72px; height: 48px; object-fit: contain; background: #fafafa; border: 1px solid #e4e4e7; border-radius: 4px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { border-bottom: 1px solid #f4f4f5; padding: 4px; text-align: left; vertical-align: top; }
+      .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+      .gallery figure { margin: 0; } .gallery img { width: 100%; border: 1px solid #e4e4e7; border-radius: 4px; background: #fff; }
+      .gallery figcaption { font-size: 11px; color: #52525b; word-break: break-all; }
+      .errors { color: #b91c1c; font-size: 12px; } .muted { color: #71717a; font-size: 12px; }
+      progress { width: 100%; }
+      #verdict { font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Virtual Mirror · QA Lab</h1>
+      <span class="warn">INTERNAL DEVELOPMENT TOOL · NOT THE PRODUCT</span>
+      <span>Nothing on this page is uploaded. Photos, videos, captures and reports stay in this browser until you download them.</span>
+      <code id="buildInfo"></code>
+    </header>
+    <main>
+      <div>
+        <section>
+          <h2>1 · Test</h2>
+          <div class="row">
+            <div><label for="testKind">Test kind</label>
+              <select id="testKind">
+                <option value="live-renderer">Live renderer (existing pipeline)</option>
+                <option value="automatic-reconstruction">Automatic reconstruction (future engine)</option>
+              </select></div>
+          </div>
+          <div class="row">
+            <div><label for="tester">Tester</label><input id="tester" type="text" /></div>
+            <div><label for="device">Device (model, OS)</label><input id="device" type="text" placeholder="e.g. iPhone 13, iOS 18.1" /></div>
+          </div>
+        </section>
+
+        <section>
+          <h2>2 · Reference product</h2>
+          <label for="productName">Product name</label><input id="productName" type="text" />
+          <label for="productSource">Source of photos and measurements</label><input id="productSource" type="text" placeholder="e.g. merchant listing, measured by hand" />
+          <div class="row">
+            <div><label for="dimLensWidth">Lens width mm</label><input id="dimLensWidth" type="number" step="0.1" /></div>
+            <div><label for="dimBridgeWidth">Bridge mm</label><input id="dimBridgeWidth" type="number" step="0.1" /></div>
+            <div><label for="dimTempleLength">Temple mm</label><input id="dimTempleLength" type="number" step="0.1" /></div>
+          </div>
+          <div class="row">
+            <div><label for="dimLensHeight">Lens height mm</label><input id="dimLensHeight" type="number" step="0.1" /></div>
+            <div><label for="dimTotalWidth">Total front width mm</label><input id="dimTotalWidth" type="number" step="0.1" /></div>
+          </div>
+          <label for="photoFront">Front photo</label><input id="photoFront" type="file" accept="image/*" />
+          <label for="photoThreeQuarter">Three-quarter photo</label><input id="photoThreeQuarter" type="file" accept="image/*" />
+          <label for="photoSide">Side photo</label><input id="photoSide" type="file" accept="image/*" />
+          <div class="thumbs" id="thumbs"></div>
+        </section>
+
+        <section>
+          <h2>3 · Asset under test</h2>
+          <div class="row">
+            <div><label for="glbFile">GLB file</label><input id="glbFile" type="file" accept=".glb,model/gltf-binary" /></div>
+            <div><button id="useDemo" type="button">Use generic demo frame</button></div>
+          </div>
+          <div class="row">
+            <div><label for="provenance">Provenance (required)</label>
+              <select id="provenance">
+                <option value="">Choose…</option>
+                <option value="generic">Generic frame (not the product)</option>
+                <option value="manual">Manually prepared model</option>
+                <option value="automatic">Automatically generated</option>
+              </select></div>
+            <div><label for="method">Preparation method</label>
+              <select id="method">
+                <option value="demo-template">demo-template</option>
+                <option value="existing-glb">existing-glb (made by a person)</option>
+                <option value="silhouette-2.5d">silhouette-2.5d</option>
+                <option value="other">other</option>
+              </select></div>
+          </div>
+          <dl class="kv" id="assetInfo"><dt>Asset</dt><dd>none loaded</dd></dl>
+          <table id="dimChecks"></table>
+        </section>
+
+        <section>
+          <h2>5 · Live renderer</h2>
+          <div class="row">
+            <label><input id="mirrorOn" type="checkbox" checked /> Mirror image</label>
+            <label><input id="debugOn" type="checkbox" checked /> Debug overlay</label>
+          </div>
+          <div class="row"><button id="openCamera" class="primary" type="button">Open live mirror (camera)</button></div>
+          <label for="videoFile">Prerecorded test video (permission-cleared)</label>
+          <input id="videoFile" type="file" accept="video/*" />
+          <label for="consent">Consent / permission basis for this video (required)</label>
+          <input id="consent" type="text" placeholder="e.g. recorded by tester of themself, 2026-11-04" />
+          <div class="row" style="margin-top:8px">
+            <button id="openVideo" type="button">Play video through live mirror</button>
+          </div>
+          <h2 style="margin-top:12px">6 · Deterministic replay</h2>
+          <div class="row">
+            <div><label for="replayFps">Step fps</label><input id="replayFps" type="number" value="30" /></div>
+            <div><label for="replayMax">Max frames</label><input id="replayMax" type="number" value="300" /></div>
+            <div><label for="replayEvery">Capture every N</label><input id="replayEvery" type="number" value="30" /></div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="runReplay" type="button">Run replay</button>
+            <button id="runReplayTwice" type="button">Run twice (determinism)</button>
+          </div>
+          <progress id="replayProgress" value="0" max="1" hidden></progress>
+          <p class="muted">Replay steps through the video frame by frame using media time, through the same pipeline as the storefront. Frame rate is not measured in replay; use a live session for FPS.</p>
+        </section>
+      </div>
+
+      <div>
+        <section>
+          <h2>4 · Asset viewer and photo comparison</h2>
+          <div id="stage"><span id="provBanner" class="badge unset">Provenance not set</span><span id="viewName">front</span><img id="overlay" class="overlay" alt="" hidden /></div>
+          <div class="row" style="margin-top:8px">
+            <button type="button" data-view="front" aria-pressed="true">Front</button>
+            <button type="button" data-view="threeQuarter">3/4</button>
+            <button type="button" data-view="side">Side</button>
+            <button type="button" data-view="top">Top</button>
+            <div><label for="elevation">Elevation °</label><input id="elevation" type="number" value="0" step="1" /></div>
+            <div><label for="projection">Projection</label><select id="projection"><option value="orthographic">Orthographic</option><option value="perspective">Perspective</option></select></div>
+            <div><label for="renderMode">Render</label><select id="renderMode"><option>shaded</option><option>silhouette</option><option>wireframe</option></select></div>
+            <div><label for="background">Background</label><select id="background"><option value="">Transparent</option><option value="ffffff">White</option><option value="808080">Grey</option></select></div>
+            <label><input id="grid" type="checkbox" /> 10 mm grid</label>
+          </div>
+          <div class="row">
+            <label><input id="overlayOn" type="checkbox" checked /> Overlay photo for this view</label>
+            <div><label for="ovOpacity">Opacity</label><input id="ovOpacity" type="range" min="0" max="1" step="0.05" value="0.5" /></div>
+            <div><label for="ovScale">Scale</label><input id="ovScale" type="number" step="0.01" value="1" /></div>
+            <div><label for="ovX">Offset X px</label><input id="ovX" type="number" value="0" /></div>
+            <div><label for="ovY">Offset Y px</label><input id="ovY" type="number" value="0" /></div>
+            <div><label for="ovRot">Rotate °</label><input id="ovRot" type="number" step="0.5" value="0" /></div>
+            <div><label for="ovBlend">Blend</label><select id="ovBlend"><option value="normal">Normal</option><option value="difference">Difference</option></select></div>
+          </div>
+          <p class="muted" id="scaleInfo"></p>
+          <div class="row">
+            <button id="captureView" type="button">Capture render</button>
+            <button id="captureCompare" type="button">Capture render + photo overlay</button>
+            <button id="captureSet" type="button">Capture front, 3/4, side</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Sessions</h2>
+          <table id="sessions"><tr><td class="muted">No sessions yet.</td></tr></table>
+        </section>
+
+        <section>
+          <h2>Captures (actual renderer output)</h2>
+          <div class="row"><button id="downloadCaptures" type="button">Download all captures</button></div>
+          <div class="gallery" id="gallery"></div>
+        </section>
+
+        <section>
+          <h2>7 · Evaluation (no scores: pass, fail or not tested, with what you observed)</h2>
+          <table id="criteria"></table>
+          <label for="failures">Known alignment or material failures</label>
+          <textarea id="failures" rows="4"></textarea>
+          <p>Verdict: <span id="verdict">INCOMPLETE</span></p>
+          <div class="errors" id="errors"></div>
+          <div class="row">
+            <button id="exportMd" class="primary" type="button">Download report (Markdown)</button>
+            <button id="exportJson" type="button">Download report (JSON + traces)</button>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="./qa-lab.ts"></script>
+  </body>
+</html>
